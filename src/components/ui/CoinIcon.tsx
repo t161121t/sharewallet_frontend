@@ -1,6 +1,7 @@
 type CoinIconProps = {
   size?: "sm" | "md";
   className?: string;
+  animate?: boolean;
 };
 
 const sizeMap = {
@@ -8,7 +9,11 @@ const sizeMap = {
   md: 32,
 };
 
-export default function CoinIcon({ size = "sm", className = "" }: CoinIconProps) {
+export default function CoinIcon({
+  size = "sm",
+  className = "",
+  animate = true,
+}: CoinIconProps) {
   const px = sizeMap[size];
 
   return (
@@ -19,6 +24,7 @@ export default function CoinIcon({ size = "sm", className = "" }: CoinIconProps)
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
+      style={animate ? { animation: "spin-slow 4s linear infinite" } : undefined}
       aria-hidden
     >
       {/* 外側の円（金貨の縁・光沢） */}

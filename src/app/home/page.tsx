@@ -1,21 +1,35 @@
+"use client";
+
 import Link from "next/link";
 import ScreenContainer from "@/components/layout/ScreenContainer";
+import PageTransition from "@/components/layout/PageTransition";
 import Logo from "@/components/ui/Logo";
 import CoinIcon from "@/components/ui/CoinIcon";
 
-const buttonClassName =
-  "w-full h-11 rounded-full bg-gradient-to-r from-yellow-500 via-yellow-300 to-yellow-500 text-white font-medium shadow-sm active:scale-[0.99] flex items-center justify-center";
+const buttonClassName = [
+  "w-full h-14 rounded-full font-semibold text-lg text-white",
+  "shadow-md hover:shadow-lg",
+  "transition-all duration-150 ease-out",
+  "hover:brightness-105 active:scale-[0.97] active:shadow-inner",
+  "flex items-center justify-center",
+  "relative overflow-hidden",
+].join(" ");
 
 export default function HomePage() {
   return (
     <ScreenContainer>
-      <div className="flex flex-col items-center w-full flex-1 min-h-0">
-        <Logo />
+      <PageTransition className="flex flex-col items-center w-full flex-1">
+        <div className="flex-1 flex items-center justify-center w-full">
+          <Logo size={140} showScriptText={true} />
+        </div>
 
-        <div className="flex flex-col gap-4 w-full mt-10">
+        <div className="flex flex-col gap-5 w-full pb-4">
           <Link
             href="/login"
             className={buttonClassName}
+            style={{
+              background: "linear-gradient(135deg, #d4a320 0%, #e8c547 50%, #c9a227 100%)",
+            }}
             aria-label="ログイン画面へ"
           >
             ログイン
@@ -23,16 +37,19 @@ export default function HomePage() {
           <Link
             href="/register"
             className={buttonClassName}
+            style={{
+              background: "linear-gradient(135deg, #d4a320 0%, #e8c547 50%, #c9a227 100%)",
+            }}
             aria-label="新規登録画面へ"
           >
             新規登録
           </Link>
         </div>
 
-        <footer className="mt-auto pt-8 flex justify-center">
-          <CoinIcon size="sm" />
+        <footer className="py-4 flex justify-center">
+          <CoinIcon size="md" />
         </footer>
-      </div>
+      </PageTransition>
     </ScreenContainer>
   );
 }
