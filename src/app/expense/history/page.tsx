@@ -1,0 +1,228 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import ScreenContainer from "@/components/layout/ScreenContainer";
+import PageTransition from "@/components/layout/PageTransition";
+import BottomNav from "@/components/layout/BottomNav";
+import CategoryIcon from "@/components/icons/CategoryIcon";
+import type { Group, ExpenseRecord, CategoryName } from "@/types";
+import {
+  isAuthenticated,
+  getSelectedGroupId,
+  getGroup,
+  getExpenses,
+} from "@/lib/apiClient";
+
+/** カテゴリの色マップ */
+const CATEGORY_COLORS: Record<CategoryName, string> = {
+  貯金: "#22c55e",
+  住居: "#f97316",
+  交通: "#38bdf8",
+  食費: "#ef4444",
+  娯楽: "#8b5cf6",
+  その他: "#94a3b8",
+};
+
+/** メンバー色マップ */
+const MEMBER_COLORS: Record<string, string> = {
+  u1: "#F59E0B",
+  u2: "#3B82F6",
+  u3: "#EC4899",
+  u4: "#10B981",
+};
+
+/* ---------- 日付フォーマット ---------- */
+
+function formatDate(iso: string) {
+  const d = new Date(iso);
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+  const w = weekdays[d.getDay()];
+  return `${m}/${day}（${w}）`;
+}
+
+function formatTime(iso: string) {
+  const d = new Date(iso);
+  return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+}
+
+/* ---------- 日付ごとにグループ化 ---------- */
+
+function groupByDate(expenses: ExpenseRecord[]) {
+  const map = new Map<string, ExpenseRecord[]>();
+  for (const e of expenses) {
+    const key = e.date.slice(0, 10);
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(e);
+  }
+  return Array.from(map.entries()).sort(([a], [b]) => b.localeCompare(a));
+}
+
+/* ---------- サマリーカード ---------- */
+
+function SummaryCard({ expenses, group }: { expenses: ExpenseRecord[]; group: Group }) {
+  const total = expenses.reduce((s, e) => s + e.amount, 0);
+  const perPerson = Math.round(total / group.members.length);
+
+  return (
+    <div
+      className="w-full rounded-2xl p-5 text-white shadow-lg"
+      style={{
+        background: "linear-gradient(135deg, #d4a320 0%, #e8c547 50%, #c9a227 100%)",
+      }}
+    >
+      <p className="text-sm font-medium opacity-90">今月の合計</p>
+      <p className="text-3xl font-bold mt-1 tabular-nums">
+        ¥{total.toLocaleString()}
+      </p>
+      <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/30">
+        <div>
+          <p className="text-xs opacity-80">1人あたり</p>
+          <p className="text-lg font-bold tabular-nums">
+            ¥{perPerson.toLocaleString()}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs opacity-80">件数</p>
+          <p className="text-lg font-bold tabular-nums">{expenses.length}件</p>
+        </div>
+        <div>
+          <p className="text-xs opacity-80">メンバー</p>
+          <p className="text-lg font-bold tabular-nums">
+            {group.members.length}人
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- 支出アイテム ---------- */
+
+function ExpenseItem({ expense }: { expense: ExpenseRecord }) {
+  const color = CATEGORY_COLORS[expense.category] ?? "#94a3b8";
+  const memberColor = MEMBER_COLORS[expense.memberId] ?? "#6b7280";
+
+  return (
+    <div className="flex items-center gap-3 py-3">
+      <div
+        className="shrink-0 w-11 h-11 rounded-xl flex items-center justify-center"
+        style={{ backgroundColor: `${color}18` }}
+      >
+        <CategoryIcon category={expense.category} size={22} style={{ color }} />
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="text-base font-semibold text-[#2d2a26] dark:text-[#eae7e1] truncate">
+            {expense.memo || expense.category}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 mt-0.5">
+          <span
+            className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full text-white"
+            style={{ backgroundColor: memberColor }}
+          >
+            {expense.memberName}
+          </span>
+          <span className="text-xs text-[#9e9a93] dark:text-[#666360]">
+            {formatTime(expense.date)}
+          </span>
+        </div>
+      </div>
+
+      <span className="text-base font-bold text-[#2d2a26] dark:text-[#eae7e1] tabular-nums shrink-0">
+        ¥{expense.amount.toLocaleString()}
+      </span>
+    </div>
+  );
+}
+
+/* ---------- ページ ---------- */
+
+export default function HistoryPage() {
+  const router = useRouter();
+  const [isReady, setIsReady] = useState(false);
+  const [group, setGroup] = useState<Group | null>(null);
+  const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!isAuthenticated()) {
+      router.replace("/login");
+      return;
+    }
+
+    const groupId = getSelectedGroupId();
+    if (!groupId) {
+      router.replace("/dashboard");
+      return;
+    }
+
+    // API からグループ情報と支出一覧を並行取得
+    Promise.all([getGroup(groupId), getExpenses(groupId)])
+      .then(([groupData, expensesData]) => {
+        setGroup(groupData);
+        setExpenses(expensesData);
+        setIsReady(true);
+      })
+      .catch(() => {
+        router.replace("/dashboard");
+      });
+  }, [router]);
+
+  if (!isReady || !group) return null;
+
+  const grouped = groupByDate(expenses);
+
+  return (
+    <ScreenContainer>
+      <PageTransition className="flex flex-col w-full flex-1 pb-20">
+        <p
+          className="text-4xl text-[#2d2a26] dark:text-[#eae7e1] pb-4 text-center"
+          style={{ fontFamily: "var(--font-dancing-script), cursive" }}
+        >
+          Share Wallet
+        </p>
+
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-8 h-8 rounded-full bg-[#c9a227] flex items-center justify-center shrink-0">
+            <svg viewBox="0 0 24 24" fill="white" width={16} height={16}>
+              <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+            </svg>
+          </div>
+          <span className="text-lg font-bold text-[#2d2a26] dark:text-[#eae7e1]">
+            {group.name}
+          </span>
+        </div>
+
+        <SummaryCard expenses={expenses} group={group} />
+
+        <h2 className="text-lg font-bold text-[#2d2a26] dark:text-[#eae7e1] mt-6 mb-2">
+          支出履歴
+        </h2>
+
+        <div className="flex flex-col gap-1">
+          {grouped.map(([dateKey, items]) => (
+            <div key={dateKey}>
+              <div className="sticky top-0 bg-[#faf8f5]/90 dark:bg-[#111110]/90 backdrop-blur-sm py-2 z-10">
+                <span className="text-sm font-semibold text-[#7a756d] dark:text-[#9e9a93]">
+                  {formatDate(items[0].date)}
+                </span>
+              </div>
+              <div className="divide-y divide-[#f0ece6] dark:divide-[#262522]">
+                {items.map((expense) => (
+                  <ExpenseItem key={expense.id} expense={expense} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </PageTransition>
+
+      <BottomNav />
+    </ScreenContainer>
+  );
+}
