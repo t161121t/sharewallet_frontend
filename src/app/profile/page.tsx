@@ -8,9 +8,15 @@ import PageTransition from "@/components/layout/PageTransition";
 import BottomNav from "@/components/layout/BottomNav";
 import TextInput from "@/components/ui/TextInput";
 import PrimaryButton from "@/components/ui/PrimaryButton";
-import { loadUser, saveUser, type UserProfile } from "@/lib/mockUser";
-
-const AUTH_KEY = "sharewallet_logged_in";
+import type { UserProfile } from "@/types";
+import {
+  isAuthenticated,
+  getMe,
+  updateMe,
+  logout,
+  getCachedUser,
+  ApiClientError,
+} from "@/lib/apiClient";
 
 const AVATAR_COLORS = [
   "#c9a227",
@@ -28,27 +34,51 @@ const AVATAR_COLORS = [
 export default function ProfilePage() {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [isChecked, setIsChecked] = useState(false);
+  const [isReady, setIsReady] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [color, setColor] = useState("#c9a227");
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
+  const [userId, setUserId] = useState("u1");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (!window.localStorage.getItem(AUTH_KEY)) {
+    if (!isAuthenticated()) {
       router.replace("/login");
       return;
     }
-    const user = loadUser();
-    if (user) {
-      setName(user.name);
-      setEmail(user.email);
-      setColor(user.color);
-      setAvatarUrl(user.avatarUrl);
+
+    // まずキャッシュから即座に表示し、API からも取得して更新
+    const cached = getCachedUser();
+    if (cached) {
+      setName(cached.name);
+      setEmail(cached.email);
+      setColor(cached.color);
+      setAvatarUrl(cached.avatarUrl);
+      setUserId(cached.id);
     }
-    setIsChecked(true);
+
+    getMe()
+      .then((user) => {
+        setName(user.name);
+        setEmail(user.email);
+        setColor(user.color);
+        setAvatarUrl(user.avatarUrl);
+        setUserId(user.id);
+        setIsReady(true);
+      })
+      .catch(() => {
+        // API 失敗してもキャッシュがあれば表示
+        if (cached) {
+          setIsReady(true);
+        } else {
+          router.replace("/login");
+        }
+      });
+
+    // キャッシュがあれば先に表示
+    if (cached) setIsReady(true);
   }, [router]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -100,30 +130,34 @@ export default function ProfilePage() {
       return;
     }
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 500));
-    const updated: UserProfile = {
-      id: loadUser()?.id ?? "u1",
-      name: name.trim(),
-      email: email.trim(),
-      color,
-      avatarUrl,
-    };
-    saveUser(updated);
-    toast.success("プロフィールを更新しました");
-    setSaving(false);
+    try {
+      const updated: UserProfile = {
+        id: userId,
+        name: name.trim(),
+        email: email.trim(),
+        color,
+        avatarUrl,
+      };
+      await updateMe(updated);
+      toast.success("プロフィールを更新しました");
+    } catch (e) {
+      if (e instanceof ApiClientError) {
+        toast.error(e.message);
+      } else {
+        toast.error("更新に失敗しました");
+      }
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleLogout = () => {
-    if (typeof window !== "undefined") {
-      window.localStorage.removeItem(AUTH_KEY);
-      window.localStorage.removeItem("sharewallet_group");
-      window.localStorage.removeItem("sharewallet_user");
-    }
+    logout();
     toast.success("ログアウトしました");
     router.push("/home");
   };
 
-  if (!isChecked) return null;
+  if (!isReady) return null;
 
   return (
     <ScreenContainer>

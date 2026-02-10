@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import ScreenContainer from "@/components/layout/ScreenContainer";
 import PageTransition from "@/components/layout/PageTransition";
@@ -9,8 +10,10 @@ import Logo from "@/components/ui/Logo";
 import TextInput from "@/components/ui/TextInput";
 import PrimaryButton from "@/components/ui/PrimaryButton";
 import CoinIcon from "@/components/ui/CoinIcon";
+import { register, ApiClientError } from "@/lib/apiClient";
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,9 +37,19 @@ export default function RegisterPage() {
     if (!validate()) return;
 
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-    toast.success("登録が完了しました");
-    setLoading(false);
+    try {
+      await register(name, email, password);
+      toast.success("登録が完了しました。ログインしてください。");
+      router.push("/login");
+    } catch (e) {
+      if (e instanceof ApiClientError) {
+        toast.error(e.message);
+      } else {
+        toast.error("登録に失敗しました");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

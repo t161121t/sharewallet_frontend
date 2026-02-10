@@ -10,26 +10,45 @@ import GroupBanner from "@/components/ui/GroupBanner";
 import ExpensePieChart from "@/components/ui/ExpensePieChart";
 import GenreSelect from "@/components/ui/GenreSelect";
 import PrimaryButton from "@/components/ui/PrimaryButton";
-import { loadGroup, MOCK_GROUP, type Group } from "@/lib/mockGroup";
-
-const AUTH_KEY = "sharewallet_logged_in";
+import type { Group, CategoryName } from "@/types";
+import {
+  isAuthenticated,
+  getSelectedGroupId,
+  getGroup,
+  createExpense,
+  ApiClientError,
+} from "@/lib/apiClient";
 
 export default function ExpensePage() {
   const router = useRouter();
   const [genre, setGenre] = useState("");
   const [amount, setAmount] = useState("");
-  const [isChecked, setIsChecked] = useState(false);
+  const [isReady, setIsReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const [group, setGroup] = useState<Group | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (!window.localStorage.getItem(AUTH_KEY)) {
+    if (!isAuthenticated()) {
       router.replace("/login");
       return;
     }
-    setGroup(loadGroup() ?? MOCK_GROUP);
-    setIsChecked(true);
+
+    const groupId = getSelectedGroupId();
+    if (!groupId) {
+      router.replace("/dashboard");
+      return;
+    }
+
+    // API からグループ情報を取得
+    getGroup(groupId)
+      .then((data) => {
+        setGroup(data);
+        setIsReady(true);
+      })
+      .catch(() => {
+        router.replace("/dashboard");
+      });
   }, [router]);
 
   const handleRegister = async () => {
@@ -37,15 +56,30 @@ export default function ExpensePage() {
       toast.error("ジャンルと金額を入力してください");
       return;
     }
+    if (!group) return;
+
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 600));
-    toast.success("支出を登録しました");
-    setLoading(false);
-    setGenre("");
-    setAmount("");
+    try {
+      await createExpense(group.id, {
+        category: genre as CategoryName,
+        amount: Number(amount),
+        memo: "",
+      });
+      toast.success("支出を登録しました");
+      setGenre("");
+      setAmount("");
+    } catch (e) {
+      if (e instanceof ApiClientError) {
+        toast.error(e.message);
+      } else {
+        toast.error("登録に失敗しました");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  if (!isChecked || !group) return null;
+  if (!isReady || !group) return null;
 
   return (
     <ScreenContainer>

@@ -1,12 +1,7 @@
 import type { SVGProps } from "react";
+import type { CategoryName } from "@/types";
 
-export type CategoryName =
-  | "貯金"
-  | "住居"
-  | "交通"
-  | "食費"
-  | "娯楽"
-  | "その他";
+export type { CategoryName };
 
 type CategoryIconProps = SVGProps<SVGSVGElement> & {
   /** カテゴリ名 */

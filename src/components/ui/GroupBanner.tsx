@@ -1,6 +1,6 @@
 "use client";
 
-import type { Group } from "@/lib/mockGroup";
+import type { Group } from "@/types";
 
 type GroupBannerProps = {
   group: Group;

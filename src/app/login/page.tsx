@@ -10,10 +10,7 @@ import Logo from "@/components/ui/Logo";
 import TextInput from "@/components/ui/TextInput";
 import PrimaryButton from "@/components/ui/PrimaryButton";
 import CoinIcon from "@/components/ui/CoinIcon";
-import { MOCK_GROUP, saveGroup } from "@/lib/mockGroup";
-import { MOCK_USER, saveUser } from "@/lib/mockUser";
-
-const AUTH_KEY = "sharewallet_logged_in";
+import { login, ApiClientError } from "@/lib/apiClient";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -36,14 +33,19 @@ export default function LoginPage() {
     if (!validate()) return;
 
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(AUTH_KEY, "1");
-      saveGroup(MOCK_GROUP);
-      saveUser(MOCK_USER);
+    try {
+      await login(email, password);
+      toast.success("ログインしました");
+      router.push("/dashboard");
+    } catch (e) {
+      if (e instanceof ApiClientError) {
+        toast.error(e.message);
+      } else {
+        toast.error("ログインに失敗しました");
+      }
+    } finally {
+      setLoading(false);
     }
-    toast.success("ログインしました");
-    router.push("/dashboard");
   };
 
   return (

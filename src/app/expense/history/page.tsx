@@ -6,15 +6,31 @@ import ScreenContainer from "@/components/layout/ScreenContainer";
 import PageTransition from "@/components/layout/PageTransition";
 import BottomNav from "@/components/layout/BottomNav";
 import CategoryIcon from "@/components/icons/CategoryIcon";
-import { loadGroup, MOCK_GROUP, type Group } from "@/lib/mockGroup";
+import type { Group, ExpenseRecord, CategoryName } from "@/types";
 import {
-  MOCK_EXPENSES,
-  CATEGORY_COLORS,
-  MEMBER_COLORS,
-  type ExpenseRecord,
-} from "@/lib/mockExpenses";
+  isAuthenticated,
+  getSelectedGroupId,
+  getGroup,
+  getExpenses,
+} from "@/lib/apiClient";
 
-const AUTH_KEY = "sharewallet_logged_in";
+/** カテゴリの色マップ */
+const CATEGORY_COLORS: Record<CategoryName, string> = {
+  貯金: "#22c55e",
+  住居: "#f97316",
+  交通: "#38bdf8",
+  食費: "#ef4444",
+  娯楽: "#8b5cf6",
+  その他: "#94a3b8",
+};
+
+/** メンバー色マップ */
+const MEMBER_COLORS: Record<string, string> = {
+  u1: "#F59E0B",
+  u2: "#3B82F6",
+  u3: "#EC4899",
+  u4: "#10B981",
+};
 
 /* ---------- 日付フォーマット ---------- */
 
@@ -128,22 +144,38 @@ function ExpenseItem({ expense }: { expense: ExpenseRecord }) {
 
 export default function HistoryPage() {
   const router = useRouter();
-  const [isChecked, setIsChecked] = useState(false);
+  const [isReady, setIsReady] = useState(false);
   const [group, setGroup] = useState<Group | null>(null);
+  const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (!window.localStorage.getItem(AUTH_KEY)) {
+    if (!isAuthenticated()) {
       router.replace("/login");
       return;
     }
-    setGroup(loadGroup() ?? MOCK_GROUP);
-    setIsChecked(true);
+
+    const groupId = getSelectedGroupId();
+    if (!groupId) {
+      router.replace("/dashboard");
+      return;
+    }
+
+    // API からグループ情報と支出一覧を並行取得
+    Promise.all([getGroup(groupId), getExpenses(groupId)])
+      .then(([groupData, expensesData]) => {
+        setGroup(groupData);
+        setExpenses(expensesData);
+        setIsReady(true);
+      })
+      .catch(() => {
+        router.replace("/dashboard");
+      });
   }, [router]);
 
-  if (!isChecked || !group) return null;
+  if (!isReady || !group) return null;
 
-  const grouped = groupByDate(MOCK_EXPENSES);
+  const grouped = groupByDate(expenses);
 
   return (
     <ScreenContainer>
@@ -166,7 +198,7 @@ export default function HistoryPage() {
           </span>
         </div>
 
-        <SummaryCard expenses={MOCK_EXPENSES} group={group} />
+        <SummaryCard expenses={expenses} group={group} />
 
         <h2 className="text-lg font-bold text-[#2d2a26] dark:text-[#eae7e1] mt-6 mb-2">
           支出履歴

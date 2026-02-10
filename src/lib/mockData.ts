@@ -1,23 +1,66 @@
-import type { CategoryName } from "@/components/icons/CategoryIcon";
+/**
+ * モックデータ（API レスポンス用）
+ *
+ * このファイルは API ルートから参照されます。
+ * フロントエンド（クライアントコンポーネント）からは直接インポートせず、
+ * API 経由で取得してください。
+ */
 
-/** 支出レコードの型 */
-export type ExpenseRecord = {
-  id: string;
-  /** カテゴリ */
-  category: CategoryName;
-  /** 金額（円） */
-  amount: number;
-  /** 登録したメンバーの ID */
-  memberId: string;
-  /** 登録したメンバーの名前 */
-  memberName: string;
-  /** メモ（任意） */
-  memo?: string;
-  /** 登録日時 ISO 文字列 */
-  date: string;
+import type {
+  Group,
+  UserProfile,
+  ExpenseRecord,
+  CategoryName,
+} from "@/types";
+
+/* ========== ユーザー ========== */
+
+export const MOCK_USER: UserProfile = {
+  id: "u1",
+  name: "田中 太郎",
+  email: "tanaka@example.com",
+  color: "#F59E0B",
 };
 
-/** モック支出データ */
+/* ========== グループ ========== */
+
+export const MOCK_GROUP: Group = {
+  id: "grp-001",
+  name: "東京シェアハウス",
+  color: "#c9a227",
+  members: [
+    { id: "u1", name: "田中", color: "#F59E0B" },
+    { id: "u2", name: "鈴木", color: "#3B82F6" },
+    { id: "u3", name: "佐藤", color: "#EC4899" },
+    { id: "u4", name: "高橋", color: "#10B981" },
+  ],
+};
+
+export const MOCK_GROUPS: Group[] = [
+  MOCK_GROUP,
+  {
+    id: "grp-002",
+    name: "大学サークル会計",
+    color: "#3B82F6",
+    members: [
+      { id: "u1", name: "田中", color: "#F59E0B" },
+      { id: "u5", name: "山田", color: "#6366F1" },
+      { id: "u6", name: "伊藤", color: "#F43F5E" },
+    ],
+  },
+  {
+    id: "grp-003",
+    name: "旅行（沖縄）",
+    color: "#10B981",
+    members: [
+      { id: "u2", name: "鈴木", color: "#3B82F6" },
+      { id: "u3", name: "佐藤", color: "#EC4899" },
+    ],
+  },
+];
+
+/* ========== 支出 ========== */
+
 export const MOCK_EXPENSES: ExpenseRecord[] = [
   {
     id: "e1",
@@ -111,7 +154,8 @@ export const MOCK_EXPENSES: ExpenseRecord[] = [
   },
 ];
 
-/** カテゴリの色マップ */
+/* ========== 色マップ（表示用定数） ========== */
+
 export const CATEGORY_COLORS: Record<CategoryName, string> = {
   貯金: "#22c55e",
   住居: "#f97316",
@@ -121,7 +165,6 @@ export const CATEGORY_COLORS: Record<CategoryName, string> = {
   その他: "#94a3b8",
 };
 
-/** メンバー色マップ */
 export const MEMBER_COLORS: Record<string, string> = {
   u1: "#F59E0B",
   u2: "#3B82F6",

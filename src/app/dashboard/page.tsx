@@ -6,14 +6,13 @@ import ScreenContainer from "@/components/layout/ScreenContainer";
 import PageTransition from "@/components/layout/PageTransition";
 import BottomNav from "@/components/layout/BottomNav";
 import Logo from "@/components/ui/Logo";
+import type { Group } from "@/types";
 import {
-  MOCK_GROUPS,
-  loadGroup,
-  saveGroup,
-  type Group,
-} from "@/lib/mockGroup";
-
-const AUTH_KEY = "sharewallet_logged_in";
+  isAuthenticated,
+  getGroups,
+  getSelectedGroupId,
+  setSelectedGroupId,
+} from "@/lib/apiClient";
 
 /** テーマカラーから薄い背景色を生成 */
 function lightBg(hex: string, opacity = 0.10) {
@@ -25,26 +24,38 @@ function lightBg(hex: string, opacity = 0.10) {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [isChecked, setIsChecked] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (!window.localStorage.getItem(AUTH_KEY)) {
+    if (!isAuthenticated()) {
       router.replace("/login");
       return;
     }
-    const saved = loadGroup();
-    if (saved) setSelectedId(saved.id);
-    setIsChecked(true);
+
+    // API からグループ一覧を取得
+    getGroups()
+      .then((data) => {
+        setGroups(data);
+        const savedId = getSelectedGroupId();
+        if (savedId && data.some((g) => g.id === savedId)) {
+          setSelectedId(savedId);
+        }
+        setIsReady(true);
+      })
+      .catch(() => {
+        router.replace("/login");
+      });
   }, [router]);
 
   const handleSelect = (group: Group) => {
-    saveGroup(group);
+    setSelectedGroupId(group.id);
     setSelectedId(group.id);
   };
 
-  if (!isChecked) return null;
+  if (!isReady) return null;
 
   return (
     <ScreenContainer>
@@ -61,7 +72,7 @@ export default function DashboardPage() {
         </p>
 
         <div className="flex flex-col gap-4 w-full">
-          {MOCK_GROUPS.map((group) => {
+          {groups.map((group) => {
             const isSelected = group.id === selectedId;
             const c = group.color;
 
