@@ -1,34 +1,58 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { ExpenseRecord, ApiError } from "@/types";
-import { MOCK_EXPENSES } from "@/lib/mockData";
-
-/** 認証チェック */
-function checkAuth(req: NextRequest): boolean {
-  const auth = req.headers.get("authorization");
-  return !!auth && auth.startsWith("Bearer ");
-}
+import { prisma } from "@/lib/prisma";
+import { getAuthUserId } from "@/lib/auth";
 
 /** GET /api/groups/[groupId]/expenses - 支出一覧取得 */
-export async function GET(req: NextRequest) {
-  if (!checkAuth(req)) {
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ groupId: string }> }
+) {
+  const userId = await getAuthUserId(req);
+  if (!userId) {
     return NextResponse.json<ApiError>(
       { error: "認証が必要です" },
       { status: 401 }
     );
   }
 
-  return NextResponse.json<ExpenseRecord[]>(MOCK_EXPENSES);
+  const { groupId } = await params;
+
+  const expenses = await prisma.expense.findMany({
+    where: { groupId },
+    include: {
+      member: { select: { id: true, name: true } },
+    },
+    orderBy: { date: "desc" },
+  });
+
+  const result: ExpenseRecord[] = expenses.map((e) => ({
+    id: e.id,
+    category: e.category as ExpenseRecord["category"],
+    amount: e.amount,
+    memberId: e.member.id,
+    memberName: e.member.name,
+    memo: e.memo ?? undefined,
+    date: e.date.toISOString(),
+  }));
+
+  return NextResponse.json<ExpenseRecord[]>(result);
 }
 
 /** POST /api/groups/[groupId]/expenses - 支出登録 */
-export async function POST(req: NextRequest) {
-  if (!checkAuth(req)) {
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ groupId: string }> }
+) {
+  const userId = await getAuthUserId(req);
+  if (!userId) {
     return NextResponse.json<ApiError>(
       { error: "認証が必要です" },
       { status: 401 }
     );
   }
 
+  const { groupId } = await params;
   const body = await req.json().catch(() => null);
 
   if (!body || !body.category || !body.amount) {
@@ -38,16 +62,29 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // モック: 新しい支出レコードを作成して返す
-  const newExpense: ExpenseRecord = {
-    id: `e-${Date.now()}`,
-    category: body.category,
-    amount: body.amount,
-    memberId: body.memberId ?? "u1",
-    memberName: body.memberName ?? "田中",
-    memo: body.memo,
-    date: new Date().toISOString(),
+  const expense = await prisma.expense.create({
+    data: {
+      groupId,
+      memberId: userId,
+      category: body.category,
+      amount: body.amount,
+      memo: body.memo ?? null,
+      date: new Date(),
+    },
+    include: {
+      member: { select: { id: true, name: true } },
+    },
+  });
+
+  const result: ExpenseRecord = {
+    id: expense.id,
+    category: expense.category as ExpenseRecord["category"],
+    amount: expense.amount,
+    memberId: expense.member.id,
+    memberName: expense.member.name,
+    memo: expense.memo ?? undefined,
+    date: expense.date.toISOString(),
   };
 
-  return NextResponse.json<ExpenseRecord>(newExpense, { status: 201 });
+  return NextResponse.json<ExpenseRecord>(result, { status: 201 });
 }

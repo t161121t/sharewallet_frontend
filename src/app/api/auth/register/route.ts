@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 import type { RegisterResponse, ApiError } from "@/types";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
@@ -11,13 +13,33 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // モック: 常に登録成功
-  return NextResponse.json<RegisterResponse>({
-    user: {
-      id: `u-${Date.now()}`,
+  // email 重複チェック
+  const existing = await prisma.user.findUnique({
+    where: { email: body.email },
+  });
+  if (existing) {
+    return NextResponse.json<ApiError>(
+      { error: "このメールアドレスは既に登録されています" },
+      { status: 409 }
+    );
+  }
+
+  const passwordHash = await bcrypt.hash(body.password, 10);
+
+  const user = await prisma.user.create({
+    data: {
       name: body.name,
       email: body.email,
-      color: "#c9a227",
+      passwordHash,
+    },
+  });
+
+  return NextResponse.json<RegisterResponse>({
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      color: user.color,
     },
   });
 }

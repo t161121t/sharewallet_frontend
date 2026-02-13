@@ -1,19 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Group, ApiError } from "@/types";
-import { MOCK_GROUPS } from "@/lib/mockData";
-
-/** 認証チェック */
-function checkAuth(req: NextRequest): boolean {
-  const auth = req.headers.get("authorization");
-  return !!auth && auth.startsWith("Bearer ");
-}
+import { prisma } from "@/lib/prisma";
+import { getAuthUserId } from "@/lib/auth";
 
 /** GET /api/groups/[groupId] - グループ詳細取得 */
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ groupId: string }> }
 ) {
-  if (!checkAuth(req)) {
+  const userId = await getAuthUserId(req);
+  if (!userId) {
     return NextResponse.json<ApiError>(
       { error: "認証が必要です" },
       { status: 401 }
@@ -21,7 +17,17 @@ export async function GET(
   }
 
   const { groupId } = await params;
-  const group = MOCK_GROUPS.find((g) => g.id === groupId);
+
+  const group = await prisma.group.findUnique({
+    where: { id: groupId },
+    include: {
+      members: {
+        include: {
+          user: { select: { id: true, name: true, color: true } },
+        },
+      },
+    },
+  });
 
   if (!group) {
     return NextResponse.json<ApiError>(
@@ -30,5 +36,16 @@ export async function GET(
     );
   }
 
-  return NextResponse.json<Group>(group);
+  const result: Group = {
+    id: group.id,
+    name: group.name,
+    color: group.color,
+    members: group.members.map((m) => ({
+      id: m.user.id,
+      name: m.user.name,
+      color: m.user.color,
+    })),
+  };
+
+  return NextResponse.json<Group>(result);
 }
