@@ -1,6 +1,7 @@
-# HeartWalletLogo 実装手順
+# 03. HeartWalletLogo 実装手順
 
-Step 2「ハート型財布ロゴ」の実装内容と手順をまとめます。
+Phase 1 — Step 2「ハート型財布ロゴ」の実装内容と手順をまとめます。  
+全体像は `01-Phase1全体ガイド.md` を参照してください。
 
 ---
 
@@ -109,4 +110,4 @@ import HeartWalletLogo from "@/components/ui/HeartWalletLogo";
 | Logo のテキスト | 「Share Wallet」、Dancing Script、黒 |
 | フォント読み込み | `layout.tsx` で Dancing Script、`--font-dancing-script` |
 
-後続の Step 3（ホーム画面）・Step 4（ログイン画面）では、`<Logo />` を画面上部に配置して利用する。
+次は `04-ホーム画面実装手順.md`（Step 3）・`05-ログイン画面実装手順.md`（Step 4）へ進んでください。`<Logo />` を画面上部に配置して利用します。

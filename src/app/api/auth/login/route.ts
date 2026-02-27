@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 import type { LoginResponse, ApiError } from "@/types";
-import { MOCK_USER } from "@/lib/mockData";
-
-const MOCK_TOKEN = "mock-jwt-token-sharewallet-2026";
+import { prisma } from "@/lib/prisma";
+import { createToken } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
@@ -14,9 +14,27 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // モック: どんな認証情報でもログイン成功
+  const user = await prisma.user.findUnique({
+    where: { email: body.email },
+  });
+
+  if (!user || !(await bcrypt.compare(body.password, user.passwordHash))) {
+    return NextResponse.json<ApiError>(
+      { error: "メールアドレスまたはパスワードが正しくありません" },
+      { status: 401 }
+    );
+  }
+
+  const token = await createToken(user.id);
+
   return NextResponse.json<LoginResponse>({
-    token: MOCK_TOKEN,
-    user: MOCK_USER,
+    token,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      color: user.color,
+      avatarUrl: user.avatarUrl ?? undefined,
+    },
   });
 }
