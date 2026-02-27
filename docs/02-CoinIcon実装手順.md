@@ -1,6 +1,7 @@
-# CoinIcon 実装手順
+# 02. CoinIcon 実装手順
 
-Step 1「金貨アイコン」の実装内容と手順をまとめます。
+Phase 1 — Step 1「金貨アイコン」の実装内容と手順をまとめます。  
+全体像は `01-Phase1全体ガイド.md` を参照してください。
 
 ---
 
@@ -86,4 +87,4 @@ import CoinIcon from "@/components/ui/CoinIcon";
 | グラデーション | 外側・内側の2種類を `defs` で定義 |
 | アクセシビリティ | `aria-hidden` 付与 |
 
-後続の Step 2〜4 では、各画面のフッターで `<CoinIcon size="sm" />` を配置して利用する。
+次は `03-HeartWalletLogo実装手順.md`（Step 2）へ進んでください。各画面のフッターで `<CoinIcon size="sm" />` を配置して利用します。

@@ -29,16 +29,31 @@ export default function SplashPage() {
       <AnimatePresence>
         {show && (
           <motion.div
-            className="flex flex-col items-center gap-5"
+            className="flex flex-col items-center gap-8"
             initial={{ opacity: 0, scale: 0.85 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
           >
-            <ShareWalletLogo size={160} showText={false} />
+            {/* ロゴを白い円背景で囲んで金背景との視認性を確保 */}
+            <div
+              className="rounded-full flex items-center justify-center"
+              style={{
+                width: 260,
+                height: 260,
+                backgroundColor: "rgba(255, 255, 255, 0.2)",
+                backdropFilter: "blur(8px)",
+                boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
+              }}
+            >
+              <ShareWalletLogo size={220} showText={false} />
+            </div>
             <p
-              className="text-4xl text-white drop-shadow-md"
-              style={{ fontFamily: "var(--font-dancing-script), cursive" }}
+              className="text-6xl text-white"
+              style={{
+                fontFamily: "var(--font-dancing-script), cursive",
+                textShadow: "0 2px 12px rgba(0, 0, 0, 0.25)",
+              }}
             >
               Share Wallet
             </p>

@@ -1,9 +1,9 @@
-# ShareWallet API 仕様書
+# 07. ShareWallet API 仕様書
 
 ## 概要
 
-ShareWallet フロントエンドの Next.js Route Handlers で実装された API 一覧です。
-現時点では全エンドポイントがモック（決め打ち）データを返却します。
+ShareWallet フロントエンドの Next.js Route Handlers で実装された API 一覧です。  
+DB 設計の詳細は `08-SQLite移管計画.md`、コードレビューは `09-SQLiteコードレビュー.md` を参照してください。
 
 **ベース URL:** `/api`
 
@@ -460,7 +460,6 @@ type CategoryName = "貯金" | "住居" | "交通" | "食費" | "娯楽" | "そ�
 
 ## 備考
 
-- 現時点では全 API がモック（決め打ち）データを返却します
-- 認証はトークンの存在チェックのみ（JWT の検証は未実装）
-- DB 連携は未実装のため、POST/PUT の結果は永続化されません
+- SQLite + Prisma v7 によるデータ永続化を実装済み（`08-SQLite移管計画.md` 参照）
+- JWT 認証を導入済み（jose ライブラリ使用、bcryptjs でパスワードハッシュ化）
 - ファイル配置: `src/app/api/` 配下（Next.js Route Handlers）
