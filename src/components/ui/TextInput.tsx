@@ -17,12 +17,12 @@ export default function TextInput({
 }: TextInputProps) {
   return (
     <label className="w-full">
-      <div className="text-base font-medium text-[#4a4540] dark:text-[#c5c0b8] mb-2 transition-colors duration-200">
+      <div className="text-sm font-semibold text-[#4a4540] dark:text-[#c5c0b8] mb-1.5 transition-colors duration-200">
         {label}
       </div>
       <input
         className={[
-          "w-full h-13 rounded-xl px-4 outline-none text-base",
+          "w-full h-12 rounded-xl px-4 outline-none text-base",
           "bg-white dark:bg-[#1c1b19] border border-[#e5e0d8] dark:border-[#333230]",
           "text-[#2d2a26] dark:text-[#eae7e1]",
           "placeholder:text-[#b5b0a8] dark:placeholder:text-[#666360]",
@@ -37,7 +37,7 @@ export default function TextInput({
         onChange={(e) => onChange(e.target.value)}
       />
       {error && (
-        <p className="text-sm text-red-500 mt-1.5 animate-[fade-in-up_0.2s_ease-out]">
+        <p className="text-xs text-red-500 mt-1 animate-[fade-in-up_0.2s_ease-out]">
           {error}
         </p>
       )}

@@ -19,7 +19,7 @@ export async function GET(
       include: {
         members: {
           include: {
-            user: { select: { id: true, name: true, color: true } },
+            user: { select: { id: true, name: true, color: true, avatarUrl: true } },
           },
         },
       },
@@ -40,6 +40,7 @@ export async function GET(
         id: m.user.id,
         name: m.user.name,
         color: m.user.color,
+        avatarUrl: m.user.avatarUrl ?? undefined,
         role: m.role,
       })),
     };
@@ -92,7 +93,9 @@ export async function PUT(
       data,
       include: {
         members: {
-          include: { user: { select: { id: true, name: true, color: true } } },
+          include: {
+            user: { select: { id: true, name: true, color: true, avatarUrl: true } },
+          },
         },
       },
     });
@@ -105,6 +108,7 @@ export async function PUT(
         id: m.user.id,
         name: m.user.name,
         color: m.user.color,
+        avatarUrl: m.user.avatarUrl ?? undefined,
         role: m.role,
       })),
     };

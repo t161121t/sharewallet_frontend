@@ -8,6 +8,8 @@ export type GroupMember = {
   name: string;
   /** アバターの色（背景色として使用） */
   color: string;
+  /** アバター画像（Data URL） */
+  avatarUrl?: string;
   role?: GroupRole;
 };
 
@@ -41,6 +43,8 @@ export type ExpenseRecord = {
   memberId: string;
   /** 登録したメンバーの名前 */
   memberName: string;
+  /** 登録したメンバーのアバター画像（Data URL） */
+  memberAvatarUrl?: string;
   /** メモ（任意） */
   memo?: string;
   /** 登録日時 ISO 文字列 */

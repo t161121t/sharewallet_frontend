@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import toast from "react-hot-toast";
 import ScreenContainer from "@/components/layout/ScreenContainer";
 import PageTransition from "@/components/layout/PageTransition";
@@ -141,6 +142,22 @@ function ExpenseItem({
             className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full text-white"
             style={{ backgroundColor: memberColor }}
           >
+            {expense.memberAvatarUrl ? (
+              <span className="relative w-3.5 h-3.5 rounded-full overflow-hidden bg-white/20">
+                <Image
+                  src={expense.memberAvatarUrl}
+                  alt={expense.memberName}
+                  fill
+                  unoptimized
+                  className="object-cover"
+                  sizes="14px"
+                />
+              </span>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="currentColor" width={12} height={12}>
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+              </svg>
+            )}
             {expense.memberName}
           </span>
           <span className="text-xs text-[#9e9a93] dark:text-[#666360]">

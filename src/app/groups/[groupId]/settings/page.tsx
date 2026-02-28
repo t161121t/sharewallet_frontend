@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import ScreenContainer from "@/components/layout/ScreenContainer";
 import PageTransition from "@/components/layout/PageTransition";
+import BottomNav from "@/components/layout/BottomNav";
 import RouteLoading from "@/components/layout/RouteLoading";
 import TextInput from "@/components/ui/TextInput";
 import PrimaryButton from "@/components/ui/PrimaryButton";
@@ -95,11 +96,18 @@ export default function GroupSettingsPage() {
     }
   };
 
-  if (!group) return <RouteLoading text="グループ設定を読み込み中..." />;
+  if (!group) return <RouteLoading text="グループ設定を読み込み中..." withBottomNav />;
 
   return (
     <ScreenContainer>
-      <PageTransition className="flex flex-col w-full gap-5">
+      <PageTransition className="flex flex-col w-full gap-5 pb-20">
+        <button
+          type="button"
+          onClick={() => router.push("/dashboard")}
+          className="self-start text-sm text-[#7a756d] dark:text-[#9e9a93] underline"
+        >
+          ← ダッシュボードに戻る
+        </button>
         <h1 className="text-2xl font-bold text-[#2d2a26] dark:text-[#eae7e1]">
           グループ設定
         </h1>
@@ -168,6 +176,7 @@ export default function GroupSettingsPage() {
           グループを削除
         </button>
       </PageTransition>
+      <BottomNav />
     </ScreenContainer>
   );
 }
