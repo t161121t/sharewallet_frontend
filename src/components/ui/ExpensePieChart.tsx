@@ -67,9 +67,15 @@ export default function ExpensePieChart({
   data = DEFAULT_DATA,
   size = 220,
 }: ExpensePieChartProps) {
+  const hasCustomData = data !== DEFAULT_DATA;
   const filteredData = data.filter((d) => d.value > 0);
-  const chartData = filteredData.length > 0 ? filteredData : DEFAULT_DATA;
-  const total = chartData.reduce((s, d) => s + d.value, 0);
+  const total = data.reduce((s, d) => s + d.value, 0);
+  const chartData =
+    filteredData.length > 0
+      ? filteredData
+      : hasCustomData
+        ? [{ name: "その他" as CategoryName, value: 1, color: "#e5e0d8" }]
+        : DEFAULT_DATA;
 
   return (
     <div className="flex flex-col items-center w-full">
@@ -132,7 +138,7 @@ export default function ExpensePieChart({
           </RechartsPieChart>
         </ResponsiveContainer>
       </div>
-      <ChartLegend data={chartData} />
+      <ChartLegend data={hasCustomData ? data : chartData} />
     </div>
   );
 }

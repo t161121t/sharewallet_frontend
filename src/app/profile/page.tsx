@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import toast from "react-hot-toast";
 import ScreenContainer from "@/components/layout/ScreenContainer";
 import PageTransition from "@/components/layout/PageTransition";
 import BottomNav from "@/components/layout/BottomNav";
+import RouteLoading from "@/components/layout/RouteLoading";
 import TextInput from "@/components/ui/TextInput";
 import PrimaryButton from "@/components/ui/PrimaryButton";
 import type { UserProfile } from "@/types";
@@ -157,7 +159,7 @@ export default function ProfilePage() {
     router.push("/home");
   };
 
-  if (!isReady) return null;
+  if (!isReady) return <RouteLoading text="プロフィールを読み込み中..." withBottomNav />;
 
   return (
     <ScreenContainer>
@@ -176,7 +178,14 @@ export default function ProfilePage() {
           style={{ backgroundColor: avatarUrl ? undefined : color }}
         >
           {avatarUrl ? (
-            <img src={avatarUrl} alt="アバター" className="w-full h-full object-cover" />
+            <Image
+              src={avatarUrl}
+              alt="アバター"
+              fill
+              unoptimized
+              className="object-cover"
+              sizes="112px"
+            />
           ) : (
             <span className="flex items-center justify-center w-full h-full text-5xl font-bold text-white">
               {name ? name.charAt(0) : "?"}

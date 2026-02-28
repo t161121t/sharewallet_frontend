@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ScreenContainer from "@/components/layout/ScreenContainer";
 import PageTransition from "@/components/layout/PageTransition";
 import BottomNav from "@/components/layout/BottomNav";
+import RouteLoading from "@/components/layout/RouteLoading";
 import Logo from "@/components/ui/Logo";
 import type { Group } from "@/types";
 import {
@@ -55,7 +57,7 @@ export default function DashboardPage() {
     setSelectedId(group.id);
   };
 
-  if (!isReady) return null;
+  if (!isReady) return <RouteLoading text="グループを読み込み中..." withBottomNav />;
 
   return (
     <ScreenContainer>
@@ -70,6 +72,15 @@ export default function DashboardPage() {
         <p className="text-sm text-[#7a756d] dark:text-[#9e9a93] w-full mt-1 mb-5">
           家計簿を共有するグループを選んでください
         </p>
+
+        <div className="w-full mb-4">
+          <Link
+            href="/groups/new"
+            className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-white bg-[#c9a227] hover:brightness-105"
+          >
+            + グループ作成
+          </Link>
+        </div>
 
         <div className="flex flex-col gap-4 w-full">
           {groups.map((group) => {
@@ -143,6 +154,16 @@ export default function DashboardPage() {
                   <span className="text-xs text-[#9e9a93] dark:text-[#666360] ml-2">
                     {group.members.map((m) => m.name).join("・")}
                   </span>
+                </div>
+
+                <div className="mt-3 ml-14">
+                  <Link
+                    href={`/groups/${group.id}/settings`}
+                    className="text-xs text-[#7a756d] dark:text-[#9e9a93] underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    グループ設定
+                  </Link>
                 </div>
               </button>
             );

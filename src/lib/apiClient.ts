@@ -12,6 +12,7 @@ import type {
   Group,
   ExpenseRecord,
   CategoryName,
+  ExpenseShare,
 } from "@/types";
 
 /* ========== トークン管理 ========== */
@@ -185,6 +186,54 @@ export async function getGroup(groupId: string): Promise<Group> {
   return apiFetch<Group>(`/api/groups/${groupId}`);
 }
 
+export async function createGroup(input: {
+  name: string;
+  color?: string;
+}): Promise<Group> {
+  return apiFetch<Group>("/api/groups", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function updateGroup(
+  groupId: string,
+  input: { name?: string; color?: string }
+): Promise<Group> {
+  return apiFetch<Group>(`/api/groups/${groupId}`, {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function deleteGroup(groupId: string): Promise<{ ok: boolean }> {
+  return apiFetch<{ ok: boolean }>(`/api/groups/${groupId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function addMember(
+  groupId: string,
+  email: string
+): Promise<{ id: string; name: string; color: string; role: string }> {
+  return apiFetch<{ id: string; name: string; color: string; role: string }>(
+    `/api/groups/${groupId}/members`,
+    {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }
+  );
+}
+
+export async function removeMember(
+  groupId: string,
+  userId: string
+): Promise<{ ok: boolean }> {
+  return apiFetch<{ ok: boolean }>(`/api/groups/${groupId}/members/${userId}`, {
+    method: "DELETE",
+  });
+}
+
 /* ========== 支出 API ========== */
 
 export async function getExpenses(groupId: string): Promise<ExpenseRecord[]> {
@@ -199,11 +248,38 @@ export async function createExpense(
     memberId?: string;
     memberName?: string;
     memo?: string;
+    shares?: ExpenseShare[];
   }
 ): Promise<ExpenseRecord> {
   return apiFetch<ExpenseRecord>(`/api/groups/${groupId}/expenses`, {
     method: "POST",
     body: JSON.stringify(expense),
+  });
+}
+
+export async function updateExpense(
+  groupId: string,
+  expenseId: string,
+  expense: Partial<{
+    category: CategoryName;
+    amount: number;
+    memberId: string;
+    memo: string;
+    shares: ExpenseShare[];
+  }>
+): Promise<ExpenseRecord> {
+  return apiFetch<ExpenseRecord>(`/api/groups/${groupId}/expenses/${expenseId}`, {
+    method: "PUT",
+    body: JSON.stringify(expense),
+  });
+}
+
+export async function deleteExpense(
+  groupId: string,
+  expenseId: string
+): Promise<{ ok: boolean }> {
+  return apiFetch<{ ok: boolean }>(`/api/groups/${groupId}/expenses/${expenseId}`, {
+    method: "DELETE",
   });
 }
 
