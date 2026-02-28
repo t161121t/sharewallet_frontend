@@ -54,7 +54,7 @@ export async function PUT(
         }),
       },
       include: {
-        member: { select: { id: true, name: true } },
+        member: { select: { id: true, name: true, avatarUrl: true } },
         shares: { include: { user: { select: { id: true, name: true } } } },
       },
     });
@@ -65,6 +65,7 @@ export async function PUT(
       amount: updated.amount,
       memberId: updated.member.id,
       memberName: updated.member.name,
+      memberAvatarUrl: updated.member.avatarUrl ?? undefined,
       memo: updated.memo ?? undefined,
       date: updated.date.toISOString(),
       shares: updated.shares.map((s) => ({

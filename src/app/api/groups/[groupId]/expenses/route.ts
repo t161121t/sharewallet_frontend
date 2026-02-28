@@ -16,7 +16,7 @@ export async function GET(
     const expenses = await prisma.expense.findMany({
       where: { groupId },
       include: {
-        member: { select: { id: true, name: true } },
+        member: { select: { id: true, name: true, avatarUrl: true } },
         shares: {
           include: { user: { select: { id: true, name: true } } },
           orderBy: { createdAt: "asc" },
@@ -31,6 +31,7 @@ export async function GET(
       amount: e.amount,
       memberId: e.member.id,
       memberName: e.member.name,
+      memberAvatarUrl: e.member.avatarUrl ?? undefined,
       memo: e.memo ?? undefined,
       date: e.date.toISOString(),
       shares: e.shares.map((s) => ({
@@ -123,7 +124,7 @@ export async function POST(
         },
       },
       include: {
-        member: { select: { id: true, name: true } },
+        member: { select: { id: true, name: true, avatarUrl: true } },
         shares: {
           include: { user: { select: { id: true, name: true } } },
         },
@@ -136,6 +137,7 @@ export async function POST(
       amount: expense.amount,
       memberId: expense.member.id,
       memberName: expense.member.name,
+      memberAvatarUrl: expense.member.avatarUrl ?? undefined,
       memo: expense.memo ?? undefined,
       date: expense.date.toISOString(),
       shares: expense.shares.map((s) => ({
