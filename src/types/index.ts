@@ -1,5 +1,6 @@
 /** カテゴリ名 */
 export type CategoryName = "貯金" | "住居" | "交通" | "食費" | "娯楽" | "その他";
+export type GroupRole = "OWNER" | "ADMIN" | "MEMBER";
 
 /** グループメンバーの型 */
 export type GroupMember = {
@@ -7,6 +8,7 @@ export type GroupMember = {
   name: string;
   /** アバターの色（背景色として使用） */
   color: string;
+  role?: GroupRole;
 };
 
 /** グループの型 */
@@ -43,6 +45,19 @@ export type ExpenseRecord = {
   memo?: string;
   /** 登録日時 ISO 文字列 */
   date: string;
+  shares?: ExpenseShare[];
+};
+
+export type ExpenseShare = {
+  userId: string;
+  percent: number;
+  userName?: string;
+};
+
+export type ExpenseWithShares = {
+  amount: number;
+  memberId: string;
+  shares: ExpenseShare[];
 };
 
 /** ログインレスポンス */

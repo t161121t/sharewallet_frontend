@@ -10,6 +10,12 @@ datasource db {
   provider = "sqlite"
 }
 
+enum GroupRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
 model User {
   id           String   @id @default(cuid())
   name         String
@@ -22,6 +28,7 @@ model User {
 
   groups   GroupMember[]
   expenses Expense[]
+  shares   ExpenseShare[]
 
   @@map("users")
 }
@@ -43,6 +50,7 @@ model GroupMember {
   id        String   @id @default(cuid())
   userId    String   @map("user_id")
   groupId   String   @map("group_id")
+  role      GroupRole @default(MEMBER)
   createdAt DateTime @default(now()) @map("created_at")
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -64,6 +72,21 @@ model Expense {
 
   group  Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
   member User  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  shares ExpenseShare[]
 
   @@map("expenses")
+}
+
+model ExpenseShare {
+  id        String   @id @default(cuid())
+  expenseId String   @map("expense_id")
+  userId    String   @map("user_id")
+  percent   Float
+  createdAt DateTime @default(now()) @map("created_at")
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([expenseId, userId])
+  @@map("expense_shares")
 }

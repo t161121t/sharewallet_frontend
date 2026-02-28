@@ -1,51 +1,154 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Group, ApiError } from "@/types";
 import { prisma } from "@/lib/prisma";
-import { getAuthUserId } from "@/lib/auth";
+import { requireAuthUserId, assertGroupMember, assertGroupRole } from "@/lib/auth";
+import { GroupRole } from "@/generated/prisma/client";
 
 /** GET /api/groups/[groupId] - グループ詳細取得 */
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ groupId: string }> }
 ) {
-  const userId = await getAuthUserId(req);
-  if (!userId) {
-    return NextResponse.json<ApiError>(
-      { error: "認証が必要です" },
-      { status: 401 }
-    );
-  }
+  try {
+    const userId = await requireAuthUserId(req);
+    const { groupId } = await params;
+    await assertGroupMember(groupId, userId);
 
-  const { groupId } = await params;
-
-  const group = await prisma.group.findUnique({
-    where: { id: groupId },
-    include: {
-      members: {
-        include: {
-          user: { select: { id: true, name: true, color: true } },
+    const group = await prisma.group.findUnique({
+      where: { id: groupId },
+      include: {
+        members: {
+          include: {
+            user: { select: { id: true, name: true, color: true } },
+          },
         },
       },
-    },
-  });
+    });
 
-  if (!group) {
+    if (!group) {
+      return NextResponse.json<ApiError>(
+        { error: "グループが見つかりません" },
+        { status: 404 }
+      );
+    }
+
+    const result: Group = {
+      id: group.id,
+      name: group.name,
+      color: group.color,
+      members: group.members.map((m) => ({
+        id: m.user.id,
+        name: m.user.name,
+        color: m.user.color,
+        role: m.role,
+      })),
+    };
+    return NextResponse.json<Group>(result);
+  } catch (e) {
+    if (e instanceof Error && e.message === "UNAUTHORIZED") {
+      return NextResponse.json<ApiError>(
+        { error: "認証が必要です" },
+        { status: 401 }
+      );
+    }
+    if (e instanceof Error && e.message === "FORBIDDEN") {
+      return NextResponse.json<ApiError>(
+        { error: "このグループにアクセスする権限がありません" },
+        { status: 403 }
+      );
+    }
     return NextResponse.json<ApiError>(
-      { error: "グループが見つかりません" },
-      { status: 404 }
+      { error: "グループ取得に失敗しました" },
+      { status: 500 }
     );
   }
+}
 
-  const result: Group = {
-    id: group.id,
-    name: group.name,
-    color: group.color,
-    members: group.members.map((m) => ({
-      id: m.user.id,
-      name: m.user.name,
-      color: m.user.color,
-    })),
-  };
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ groupId: string }> }
+) {
+  try {
+    const userId = await requireAuthUserId(req);
+    const { groupId } = await params;
+    await assertGroupRole(groupId, userId, [GroupRole.OWNER, GroupRole.ADMIN]);
 
-  return NextResponse.json<Group>(result);
+    const body = await req.json().catch(() => null);
+    if (!body) {
+      return NextResponse.json<ApiError>(
+        { error: "リクエストボディが不正です" },
+        { status: 400 }
+      );
+    }
+    const data: { name?: string; color?: string } = {};
+    if (typeof body.name === "string" && body.name.trim().length > 0) {
+      data.name = body.name.trim();
+    }
+    if (typeof body.color === "string" && /^#[0-9A-Fa-f]{6}$/.test(body.color)) {
+      data.color = body.color;
+    }
+    const group = await prisma.group.update({
+      where: { id: groupId },
+      data,
+      include: {
+        members: {
+          include: { user: { select: { id: true, name: true, color: true } } },
+        },
+      },
+    });
+
+    const result: Group = {
+      id: group.id,
+      name: group.name,
+      color: group.color,
+      members: group.members.map((m) => ({
+        id: m.user.id,
+        name: m.user.name,
+        color: m.user.color,
+        role: m.role,
+      })),
+    };
+    return NextResponse.json<Group>(result);
+  } catch (e) {
+    if (e instanceof Error && e.message === "UNAUTHORIZED") {
+      return NextResponse.json<ApiError>({ error: "認証が必要です" }, { status: 401 });
+    }
+    if (e instanceof Error && e.message === "FORBIDDEN") {
+      return NextResponse.json<ApiError>(
+        { error: "グループを編集する権限がありません" },
+        { status: 403 }
+      );
+    }
+    return NextResponse.json<ApiError>(
+      { error: "グループ編集に失敗しました" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ groupId: string }> }
+) {
+  try {
+    const userId = await requireAuthUserId(req);
+    const { groupId } = await params;
+    await assertGroupRole(groupId, userId, [GroupRole.OWNER]);
+    await prisma.group.delete({ where: { id: groupId } });
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    if (e instanceof Error && e.message === "UNAUTHORIZED") {
+      return NextResponse.json<ApiError>({ error: "認証が必要です" }, { status: 401 });
+    }
+    if (e instanceof Error && e.message === "FORBIDDEN") {
+      return NextResponse.json<ApiError>(
+        { error: "グループを削除する権限がありません" },
+        { status: 403 }
+      );
+    }
+    return NextResponse.json<ApiError>(
+      { error: "グループ削除に失敗しました" },
+      { status: 500 }
+    );
+  }
 }

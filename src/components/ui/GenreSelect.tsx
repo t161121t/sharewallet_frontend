@@ -5,9 +5,9 @@ type GenreSelectProps = {
 
 const GENRE_OPTIONS = [
   { value: "", label: "ジャンル" },
-  { value: "交通費", label: "交通費" },
+  { value: "交通", label: "交通費" },
   { value: "食費", label: "食費" },
-  { value: "住居費", label: "住居費" },
+  { value: "住居", label: "住居費" },
   { value: "貯金", label: "貯金" },
   { value: "娯楽", label: "娯楽" },
   { value: "その他", label: "その他" },
